@@ -6,85 +6,141 @@
     <title>Gestion des Étudiants</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        #output {
-            height: 300px;
-            overflow-y: scroll;
-            border: 1px solid #ccc;
-            padding: 10px;
-            background-color: #f9f9f9;
+        #output, #listOutput {
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            background-color: #f9fafb;
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h1 class="text-2xl font-bold mb-4 text-center">Gestion des Étudiants</h1>
-        
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-lg">
+       
+        <div class="flex items-center mb-4">
+            <div id="connectionStatus" class="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
+            <span id="connectionText" class="text-sm sm:text-base text-gray-700">Déconnecté</span>
+        </div>
 
+        <h1 class="text-xl sm:text-2xl font-bold mb-4 text-center text-gray-800">Gestion des Étudiants</h1>
+        
+      
         <div class="mb-4">
-            <h2 class="text-lg font-semibold">Ajouter un étudiant</h2>
-            <input id="nom" type="text" placeholder="Nom" class="w-full p-2 mb-2 border rounded">
-            <input id="note" type="number" placeholder="Note" class="w-full p-2 mb-2 border rounded">
-            <button onclick="envoyerAjouter()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Ajouter</button>
+            <h2 class="text-base sm:text-lg font-semibold text-gray-700">Ajouter un étudiant</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+                <input id="nom" type="text" placeholder="Nom" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input id="note" type="number" placeholder="Note" min="0" max="20" step="0.1" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <button onclick="envoyerAjouter()" class="w-full mt-2 bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition-colors">Ajouter</button>
         </div>
         
 
-        <div class="mb-4">
-            <h2 class="text-lg font-semibold">Consulter une note</h2>
-            <input id="nomNote" type="text" placeholder="Nom" class="w-full p-2 mb-2 border rounded">
-            <button onclick="envoyerNote()" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600">Consulter</button>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mb-4">
+            <button onclick="envoyerListe()" class="w-full bg-yellow-500 text-white p-2 rounded-md hover:bg-yellow-600 transition-colors">Liste</button>
+            <button onclick="envoyerMoyenne()" class="w-full bg-purple-500 text-white p-2 rounded-md hover:bg-purple-600 transition-colors">Moyenne</button>
+            <button onclick="quitter()" class="w-full bg-red-500 text-white p-2 rounded-md hover:bg-red-600 transition-colors">Quitter</button>
         </div>
         
-
+        
         <div class="mb-4">
-            <button onclick="envoyerMoyenne()" class="w-full bg-purple-500 text-white p-2 rounded hover:bg-purple-600">Voir la moyenne</button>
+            <h2 class="text-base sm:text-lg font-semibold text-gray-700">Liste des étudiants</h2>
+            <div id="listOutput" class="mt-2 p-3 rounded-md text-sm sm:text-base h-32 sm:h-48"></div>
         </div>
         
-
+       
         <div class="mb-4">
-            <button onclick="quitter()" class="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600">Quitter</button>
+            <h2 class="text-base sm:text-lg font-semibold text-gray-700">Consulter une note</h2>
+            <input id="nomNote" type="text" placeholder="Nom de l'étudiant" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:outline-none">
+            <button onclick="envoyerNote()" class="w-full mt-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600 transition-colors">Consulter</button>
         </div>
         
-
-        <div id="output" class="mt-4"></div>
+        
+        <div class="mb-4">
+            <h2 class="text-base sm:text-lg font-semibold text-gray-700">Messages</h2>
+            <div id="output" class="mt-2 p-3 rounded-md text-sm sm:text-base h-32 sm:h-48"></div>
+        </div>
     </div>
 
     <script>
         let ws = null;
 
-        // Connexion au serveur WebSocket
+        
+        function mettreAJourConnexion(connecte) {
+            const status = document.getElementById("connectionStatus");
+            const text = document.getElementById("connectionText");
+            if (connecte) {
+                status.classList.remove("bg-red-500");
+                status.classList.add("bg-green-500");
+                text.textContent = "Connecté";
+            } else {
+                status.classList.remove("bg-green-500");
+                status.classList.add("bg-red-500");
+                text.textContent = "Déconnecté";
+            }
+        }
+
+      
         function connecter() {
-            ws = new WebSocket("ws://localhost:8080");
+            ws = new WebSocket("ws://localhost:12345");
             
             ws.onopen = () => {
                 ajouterMessage("Connecté au serveur.");
+                mettreAJourConnexion(true);
             };
 
             ws.onmessage = (event) => {
-                ajouterMessage(event.data);
+                if (event.data.startsWith("Liste des étudiants:")) {
+                    afficherListe(event.data);
+                } else {
+                    ajouterMessage(event.data);
+                }
             };
 
             ws.onclose = () => {
                 ajouterMessage("Déconnexion du serveur.");
+                mettreAJourConnexion(false);
                 ws = null;
             };
 
             ws.onerror = (error) => {
                 ajouterMessage("Erreur: " + error.message);
+                mettreAJourConnexion(false);
             };
         }
 
-        // Ajouter un message à la zone de sortie
+      
         function ajouterMessage(message) {
             const output = document.getElementById("output");
             const p = document.createElement("p");
             p.textContent = message;
+            p.className = "text-gray-800";
             output.appendChild(p);
             output.scrollTop = output.scrollHeight;
         }
 
-        // Envoyer la commande AJOUTER
+       
+        function afficherListe(message) {
+            const listOutput = document.getElementById("listOutput");
+            listOutput.innerHTML = "";
+            const lignes = message.split("\n").slice(1);
+            if (lignes.length === 1 && lignes[0] === "Aucun étudiant enregistré.") {
+                const p = document.createElement("p");
+                p.textContent = lignes[0];
+                p.className = "text-gray-800";
+                listOutput.appendChild(p);
+            } else {
+                lignes.forEach(ligne => {
+                    const p = document.createElement("p");
+                    p.textContent = ligne;
+                    p.className = "text-gray-800";
+                    listOutput.appendChild(p);
+                });
+            }
+            listOutput.scrollTop = listOutput.scrollHeight;
+        }
+
+        
         function envoyerAjouter() {
-            const nom = document.getElementById("nom").value;
+            const nom = document.getElementById("nom").value.trim();
             const note = document.getElementById("note").value;
             if (nom && note) {
                 if (ws && ws.readyState === WebSocket.OPEN) {
@@ -99,9 +155,9 @@
             }
         }
 
-        // Envoyer la commande NOTE
+        
         function envoyerNote() {
-            const nom = document.getElementById("nomNote").value;
+            const nom = document.getElementById("nomNote").value.trim();
             if (nom) {
                 if (ws && ws.readyState === WebSocket.OPEN) {
                     ws.send(`NOTE ${nom}`);
@@ -114,7 +170,16 @@
             }
         }
 
-        // Envoyer la commande MOYENNE
+        
+        function envoyerListe() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send("LIST");
+            } else {
+                ajouterMessage("Erreur: Non connecté au serveur.");
+            }
+        }
+
+       
         function envoyerMoyenne() {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send("MOYENNE");
@@ -123,7 +188,7 @@
             }
         }
 
-        // Envoyer la commande QUITTER
+      
         function quitter() {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send("QUITTER");
@@ -132,7 +197,6 @@
             }
         }
 
-        // Connexion automatique au chargement de la page
         connecter();
     </script>
 </body>

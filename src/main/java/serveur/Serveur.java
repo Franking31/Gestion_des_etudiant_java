@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Serveur extends WebSocketServer {
-    private static final int PORT = 8080;
+    private static final int PORT = 12345;
     private GestionEtudiants gestionEtudiants = new GestionEtudiants();
     private Set<WebSocket> clients = new HashSet<>();
 
@@ -21,7 +21,7 @@ public class Serveur extends WebSocketServer {
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
         clients.add(conn);
         System.out.println("Nouveau client connecté: " + conn.getRemoteSocketAddress());
-        conn.send("Connecté au serveur. Commandes: AJOUTER nom note, NOTE nom, MOYENNE, QUITTER");
+        conn.send("Connecté au serveur. Commandes: AJOUTER nom note, NOTE nom, LIST, MOYENNE, QUITTER");
     }
 
     @Override
@@ -63,6 +63,11 @@ public class Serveur extends WebSocketServer {
                 }
                 break;
 
+            case "LIST":
+                String liste = gestionEtudiants.getListeEtudiants();
+                conn.send("Liste des étudiants:\n" + liste);
+                break;
+
             case "MOYENNE":
                 double moyenne = gestionEtudiants.calculerMoyenne();
                 conn.send("Moyenne de la classe: " + moyenne);
@@ -74,7 +79,7 @@ public class Serveur extends WebSocketServer {
                 break;
 
             default:
-                conn.send("Commande inconnue. Commandes: AJOUTER, NOTE, MOYENNE, QUITTER");
+                conn.send("Commande inconnue. Commandes: AJOUTER, NOTE, LIST, MOYENNE, QUITTER");
         }
     }
 

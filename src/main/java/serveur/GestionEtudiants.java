@@ -2,6 +2,7 @@ package serveur;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class GestionEtudiants {
     private Map<String, Etudiant> etudiants;
@@ -28,5 +29,14 @@ public class GestionEtudiants {
 
     public synchronized int getNombreEtudiants() {
         return etudiants.size();
+    }
+
+    public synchronized String getListeEtudiants() {
+        if (etudiants.isEmpty()) {
+            return "Aucun étudiant enregistré.";
+        }
+        return etudiants.values().stream()
+                .map(e -> e.getNom() + ": " + e.getNote())
+                .collect(Collectors.joining("\n"));
     }
 }
