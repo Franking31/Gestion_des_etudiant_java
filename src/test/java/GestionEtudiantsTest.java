@@ -1,8 +1,7 @@
 
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
+import serveur.Etudiant;
 import serveur.GestionEtudiants;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,13 +17,15 @@ public class GestionEtudiantsTest {
     @Test
     void testAjouterEtudiant() {
         gestionEtudiants.ajouterEtudiant("Alice", 15.5);
-        assertEquals(15.5, gestionEtudiants.getNote("Alice"));
+        Etudiant etudiant = gestionEtudiants.getEtudiant("Alice");
+        assertNotNull(etudiant);
+        assertEquals(15.5, etudiant.getNote());
         assertEquals(1, gestionEtudiants.getNombreEtudiants());
     }
 
     @Test
-    void testGetNoteEtudiantInexistant() {
-        assertNull(gestionEtudiants.getNote("Bob"));
+    void testGetEtudiantInexistant() {
+        assertNull(gestionEtudiants.getEtudiant("Bob"));
     }
 
     @Test
@@ -37,6 +38,21 @@ public class GestionEtudiantsTest {
         gestionEtudiants.ajouterEtudiant("Alice", 15.5);
         gestionEtudiants.ajouterEtudiant("Bob", 12.0);
         assertEquals((15.5 + 12.0) / 2, gestionEtudiants.calculerMoyenne());
+    }
+
+    @Test
+    void testGetListeEtudiants() {
+        gestionEtudiants.ajouterEtudiant("Alice", 15.5);
+        gestionEtudiants.ajouterEtudiant("Bob", 12.0);
+        String liste = gestionEtudiants.getListeEtudiants();
+        assertTrue(liste.contains("Alice: 15.5"));
+        assertTrue(liste.contains("Bob: 12.0"));
+    }
+
+    @Test
+    void testGetListeEtudiantsVide() {
+        String liste = gestionEtudiants.getListeEtudiants();
+        assertEquals("Aucun étudiant enregistré.", liste);
     }
 
     @Test
