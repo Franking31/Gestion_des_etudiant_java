@@ -41,9 +41,9 @@ public class ClientHandler implements Runnable {
 
                     case "NOTE":
                         if (commande.length == 2) {
-                            Double note = gestionEtudiants.getNote(commande[1]);
-                            if (note != null) {
-                                out.println("Note de " + commande[1] + ": " + note);
+                            Etudiant etudiant = gestionEtudiants.getEtudiant(commande[1]);
+                            if (etudiant != null) {
+                                out.println("Note de " + commande[1] + ": " + etudiant.getNote());
                             } else {
                                 out.println("Étudiant non trouvé");
                             }

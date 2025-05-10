@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Étudiants</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #output {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-4 text-center">Gestion des Étudiants</h1>
+        
+
+        <div class="mb-4">
+            <h2 class="text-lg font-semibold">Ajouter un étudiant</h2>
+            <input id="nom" type="text" placeholder="Nom" class="w-full p-2 mb-2 border rounded">
+            <input id="note" type="number" placeholder="Note" class="w-full p-2 mb-2 border rounded">
+            <button onclick="envoyerAjouter()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Ajouter</button>
+        </div>
+        
+
+        <div class="mb-4">
+            <h2 class="text-lg font-semibold">Consulter une note</h2>
+            <input id="nomNote" type="text" placeholder="Nom" class="w-full p-2 mb-2 border rounded">
+            <button onclick="envoyerNote()" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600">Consulter</button>
+        </div>
+        
+
+        <div class="mb-4">
+            <button onclick="envoyerMoyenne()" class="w-full bg-purple-500 text-white p-2 rounded hover:bg-purple-600">Voir la moyenne</button>
+        </div>
+        
+
+        <div class="mb-4">
+            <button onclick="quitter()" class="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600">Quitter</button>
+        </div>
+        
+
+        <div id="output" class="mt-4"></div>
+    </div>
+
+    <script>
+        let ws = null;
+
+        // Connexion au serveur WebSocket
+        function connecter() {
+            ws = new WebSocket("ws://localhost:8080");
+            
+            ws.onopen = () => {
+                ajouterMessage("Connecté au serveur.");
+            };
+
+            ws.onmessage = (event) => {
+                ajouterMessage(event.data);
+            };
+
+            ws.onclose = () => {
+                ajouterMessage("Déconnexion du serveur.");
+                ws = null;
+            };
+
+            ws.onerror = (error) => {
+                ajouterMessage("Erreur: " + error.message);
+            };
+        }
+
+        // Ajouter un message à la zone de sortie
+        function ajouterMessage(message) {
+            const output = document.getElementById("output");
+            const p = document.createElement("p");
+            p.textContent = message;
+            output.appendChild(p);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Envoyer la commande AJOUTER
+        function envoyerAjouter() {
+            const nom = document.getElementById("nom").value;
+            const note = document.getElementById("note").value;
+            if (nom && note) {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(`AJOUTER ${nom} ${note}`);
+                    document.getElementById("nom").value = "";
+                    document.getElementById("note").value = "";
+                } else {
+                    ajouterMessage("Erreur: Non connecté au serveur.");
+                }
+            } else {
+                ajouterMessage("Erreur: Veuillez entrer un nom et une note.");
+            }
+        }
+
+        // Envoyer la commande NOTE
+        function envoyerNote() {
+            const nom = document.getElementById("nomNote").value;
+            if (nom) {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(`NOTE ${nom}`);
+                    document.getElementById("nomNote").value = "";
+                } else {
+                    ajouterMessage("Erreur: Non connecté au serveur.");
+                }
+            } else {
+                ajouterMessage("Erreur: Veuillez entrer un nom.");
+            }
+        }
+
+        // Envoyer la commande MOYENNE
+        function envoyerMoyenne() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send("MOYENNE");
+            } else {
+                ajouterMessage("Erreur: Non connecté au serveur.");
+            }
+        }
+
+        // Envoyer la commande QUITTER
+        function quitter() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send("QUITTER");
+            } else {
+                ajouterMessage("Erreur: Non connecté au serveur.");
+            }
+        }
+
+        // Connexion automatique au chargement de la page
+        connecter();
+    </script>
+</body>
+</html>
